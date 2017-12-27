@@ -116,7 +116,7 @@ class SPPnet:
             self.pred = tf.nn.softmax(logits)
             if label is not None:
                 label = tf.cast(label, tf.float32)
-                self.entropy_loss = -tf.reduce_sum(label * tf.log(self.pred))  
+                self.entropy_loss = -tf.reduce_mean(label * tf.log(tf.clip_by_value(self.pred,1e-5,1))  
                 self.lr = tf.train.exponential_decay(self.lr, global_step*self.batch_size, self.train_size*self.decay_epochs, 0.95, staircase=True)
                 #self.optimizer = tf.train.MomentumOptimizer(self.lr, 0.1).minimize(self.entropy_loss,global_step = global_step)
                 self.optimizer = tf.train.AdamOptimizer(5*1e-5).minimize(self.entropy_loss)
