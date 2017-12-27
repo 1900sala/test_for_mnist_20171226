@@ -13,7 +13,7 @@ train_size = 3060
 batch_size = 50
 max_epochs =10
 num_class = 10
-eval_frequency = 500
+eval_frequency = 100
 max_steps = 100000
 
      

@@ -92,21 +92,21 @@ class SPPnet:
                     padding='SAME',name='pool2')
                 print ('pool2.shape', self.pool2.shape)
                 
-               # self.conv3 = self._conv_layer(self.pool2, 'conv3', [5,5,16,16])
-               # self.pool3 = tf.nn.max_pool(self.conv3, ksize=[1,2,2,1],strides=[1,2,2,1],
-               #     padding='SAME',name='pool3')
-               # print ('pool3.shape', self.pool3.shape)
+                self.conv3 = self._conv_layer(self.pool2, 'conv3', [5,5,16,16])
+                self.pool3 = tf.nn.max_pool(self.conv3, ksize=[1,2,2,1],strides=[1,2,2,1],
+                    padding='SAME',name='pool3')
+                print ('pool3.shape', self.pool3.shape)
                 
  
-                temp1, temp2, temp3 = self.pool2.get_shape().as_list()[1:4]
-                self.fc = tf.reshape(self.pool2, [-1, temp1*temp2*temp3])
+                temp1, temp2, temp3 = self.pool3.get_shape().as_list()[1:4]
+                self.fc = tf.reshape(self.pool3, [-1, temp1*temp2*temp3])
                 print ('fc.shape', self.fc.shape)
                 
-                self.fc1 = self._fc_layer(self.fc, 'fc1',shape= [temp1*temp2*temp3,16])
+                self.fc1 = self._fc_layer(self.fc, 'fc1',shape= [temp1*temp2*temp3,32])
                 
                 if train:
                     self.fc1 = tf.nn.dropout(self.fc1, 0.5, seed=SEED)
-                self.output = self._fc_layer(self.fc1, 'output', shape=[16,num_class])
+                self.output = self._fc_layer(self.fc1, 'output', shape=[32,num_class])
                 print('inference')
                 return self.output
     
@@ -116,10 +116,10 @@ class SPPnet:
             self.pred = tf.nn.softmax(logits)
             if label is not None:
                 label = tf.cast(label, tf.float32)
-                self.entropy_loss = -tf.reduce_mean(label * tf.log(tf.clip_by_value(self.pred,1e-5,1))  
+                self.entropy_loss = -tf.reduce_mean(label * tf.log(tf.clip_by_value(self.pred,1e-5,1)))  
                 self.lr = tf.train.exponential_decay(self.lr, global_step*self.batch_size, self.train_size*self.decay_epochs, 0.95, staircase=True)
                 #self.optimizer = tf.train.MomentumOptimizer(self.lr, 0.1).minimize(self.entropy_loss,global_step = global_step)
-                self.optimizer = tf.train.AdamOptimizer(5*1e-5).minimize(self.entropy_loss)
+                self.optimizer = tf.train.AdamOptimizer(1e-4).minimize(self.entropy_loss)
                 correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(label,1))
                 self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
                 return (self.entropy_loss, self.accuracy, self.optimizer)
