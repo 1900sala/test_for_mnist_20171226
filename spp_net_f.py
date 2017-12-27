@@ -72,11 +72,10 @@ class SPPnet:
             
                 numH = self.sppool.get_shape().as_list()[1]
                 print('numH', numH)
-                self.fc6 = self._fc_layer(self.sppool, 'fc6', shape=[numH, 32])
-                self.fc7 = self._fc_layer(self.fc6, 'fc7',shape= [32,16])
+                self.fc7 = self._fc_layer(self.sppool, 'fc6', shape=[numH, 48])
                 if train:
                     self.fc7 = tf.nn.dropout(self.fc7, 0.5, seed=SEED)
-                self.output = self._fc_layer(self.fc7, 'output', shape=[16,num_class])
+                self.output = self._fc_layer(self.fc7, 'output', shape=[48,num_class])
                 print('inference')
                 return self.output
         else:
