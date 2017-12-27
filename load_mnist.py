@@ -9,12 +9,12 @@ import struct
 from sklearn import preprocessing
 
 def loadImageSet(filename):
-	print ("load image set",filename)
+
 	binfile= open(filename, 'rb')
 	buffers = binfile.read()
  
 	head = struct.unpack_from('>IIII' , buffers ,0)
-	print ("head",head)
+
  
 	offset = struct.calcsize('>IIII')
 	imgNum = head[1]
@@ -28,17 +28,14 @@ def loadImageSet(filename):
  
 	binfile.close()
 	imgs = np.reshape(imgs,[imgNum,width*height])
-	print ("load imgs finished")
 	return imgs
  
 def loadLabelSet(filename):
  
-	print ("load label set",filename)
 	binfile = open(filename, 'rb')
 	buffers = binfile.read()
  
 	head = struct.unpack_from('>II' , buffers ,0)
-	print ("head,",head)
 	imgNum=head[1]
  
 	offset = struct.calcsize('>II')
@@ -49,7 +46,6 @@ def loadLabelSet(filename):
 	enc = preprocessing.OneHotEncoder()  
 	enc.fit(labels)  
 	labels=enc.transform(labels).toarray()
-	print ('load label finished')
 	return labels
  
 
