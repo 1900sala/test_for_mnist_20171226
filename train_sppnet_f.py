@@ -6,16 +6,15 @@ import time
 import input_data
 import tensorflow as tf
 import numpy as np
-
-
+#import matplotlib.pyplot as plt
+ 
 
 train_size = 3060
 batch_size = 50
 max_epochs =10
 num_class = 10
 eval_frequency = 100
-max_steps = 100000
-
+max_steps = 5000
      
 
 class data_label_data():
@@ -35,7 +34,8 @@ class load_data(data_label_data):
         self.train = train
         self.test = test
 
-def train():
+def train(rnn_spp):
+    
     global_step = tf.Variable(0, trainable=False)
     spp_net = SPPnet()
     spp_net.set_lr(0.0001, batch_size, train_size)
@@ -62,8 +62,8 @@ def train():
 # train
     print('train')
  
-    logits = spp_net.inference(train_data, True, num_class, tp=None)
-    loss, accuracy, opt  = spp_net.train(logits, global_step, train_label)
+    logits = spp_net.inference(train_data, True, num_class, rnn_spp)
+    loss, accuracy, opt  = spp_net.train(logits, train_label)
     print('train done')
     
 # evaluation
@@ -74,28 +74,37 @@ def train():
         init = tf.global_variables_initializer()
         sess.run(init)        
         start_time = time.time()
-    #    print((FLAGS.max_epochs * train_size) // batch_size)
+        loss_l = []
+        acc_l = []
         for step in range(max_steps):
             batch = mnist.train.next_batch(batch_size)
             opt.run( feed_dict={ x_mag:batch[0], train_label: batch[1], keep_prob: 0.5 } )
-            if step % eval_frequency ==0:
-                stop_time = time.time() - start_time
-                start_time = time.time()
-                loss_value=loss.eval(feed_dict={x_mag:batch[0], train_label: batch[1], keep_prob: 1.0})
-                accu = accuracy.eval(feed_dict={x_mag:batch[0], train_label: batch[1], keep_prob: 1.0})
-                print('epoch: %.2f , %.2f ms' % (step * batch_size /train_size,
-                    1000 * stop_time / eval_frequency)) 
-                print('train loss: ', loss_value) 
-                print('train accu: ', accu)
-                if step % (10*eval_frequency) ==0:
-                    loss_value=loss.eval(feed_dict={x_mag:mnist.test.data, train_label: mnist.test.label, keep_prob: 1.0})
+            if step % eval_frequency == 0:
+                #stop_time = time.time() - start_time
+                #start_time = time.time()
+                #loss_value=loss.eval(feed_dict={x_mag:batch[0], train_label: batch[1], keep_prob: 1.0})
+                #accu = accuracy.eval(feed_dict={x_mag:batch[0], train_label: batch[1], keep_prob: 1.0})
+                #print('step', step, 'train loss: ', loss_value) 
+                #print('step', step, 'train accu: ', accu)
+                if step % eval_frequency == 0:
+                    loss_value = loss.eval(feed_dict={x_mag:mnist.test.data, train_label: mnist.test.label, keep_prob: 1.0})
                     accu = accuracy.eval(feed_dict={x_mag:mnist.test.data, train_label: mnist.test.label, keep_prob: 1.0})
                     print('%%%%%%%%%%%%%%%%%%%%%%%test loss: ', loss_value) 
                     print('%%%%%%%%%%%%%%%%%%%%%%%test accu: ', accu)
-                    
+                    loss_l.append(loss_value)
+                    acc_l.append(accu)
+        path = 'loss_'+ rnn_spp +'.npy'
+        print (path)
+        print (loss_l)
+        np.save(path , loss_l)
+        path = 'acc_'+ rnn_spp + '.npy'
+        np.save(path , acc_l)
 
 
-if __name__ == '__main__':
-    train()
+if __name__ == '__main__':   
+    
+    train('cnn')
+
+
 
 

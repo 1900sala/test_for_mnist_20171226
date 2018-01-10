@@ -53,7 +53,7 @@ class SPPnet:
         
 
     def inference(self, data, train=True, num_class=10, tp=None):
-        if tp is not None:
+        if tp is 'spp':
             with tf.name_scope('SPP'):
                 print('**********SPP*************')
                 self.conv1 = self._conv_layer(data, 'conv1', [5, 5, 1, 16])
@@ -65,12 +65,14 @@ class SPPnet:
                 self.pool2 = tf.nn.max_pool(self.conv2, ksize=[1, 2, 2, 1],strides=[1, 2, 2, 1],
                     padding='SAME',name='pool2')
                 print ('pool2.shape', self.pool2.shape)
+                
+                self.conv3 = self._conv_layer(self.pool2, 'conv3', [5, 5, 16, 16])
 
                 bins = [ 3, 2, 1]
-                map_size = self.pool2.get_shape().as_list()[1:3]
-                print('conv3.shape', self.pool2.get_shape())
+                map_size = self.conv3.get_shape().as_list()[1:3]
+                print('conv3.shape', self.conv3.get_shape())
                 sppLayer = SPPLayer(bins, map_size)
-                self.sppool = sppLayer.spatial_pyramid_pooling(self.pool2)
+                self.sppool = sppLayer.spatial_pyramid_pooling(self.conv3)
             
                 numH = self.sppool.get_shape().as_list()[1]
                 print('numH', numH)
@@ -93,9 +95,13 @@ class SPPnet:
                     padding='SAME',name='pool2')
                 print ('pool2.shape', self.pool2.shape)
                 
-
-                temp1, temp2, temp3 = self.conv2.get_shape().as_list()[1:4]
-                self.fc = tf.reshape(self.conv2, [-1, temp1*temp2*temp3])
+                self.conv3 = self._conv_layer(self.pool2, 'conv3', [5,5,16,16])
+                self.pool3 = tf.nn.max_pool(self.conv3, ksize=[1,2,2,1],strides=[1,2,2,1],
+                    padding='SAME',name='pool3')
+                print ('pool3.shape', self.pool3.shape)
+                
+                temp1, temp2, temp3 = self.pool3.get_shape().as_list()[1:4]
+                self.fc = tf.reshape(self.pool3, [-1, temp1*temp2*temp3])
                 print ('fc.shape', self.fc.shape)
 
                 self.fc1 = self._fc_layer(self.fc, 'fc1',shape= [temp1*temp2*temp3,256])
@@ -107,18 +113,15 @@ class SPPnet:
     
     
     
-    def train(self, logits, global_step, label=None):
+    def train(self, logits, label):
             self.pred = tf.nn.softmax(logits)
-            if label is not None:
-                label = tf.cast(label, tf.float32)
-                self.entropy_loss = -tf.reduce_mean(label * tf.log(tf.clip_by_value(self.pred,1e-5,1)))
-                self.optimizer = tf.train.AdamOptimizer(1e-4).minimize(self.entropy_loss)
-                correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(label,1))
-                self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-                return (self.entropy_loss, self.accuracy, self.optimizer)
-            else:
-                return self.pred
-    
+            label = tf.cast(label, tf.float32)
+            self.entropy_loss = -tf.reduce_mean(label * tf.log(tf.clip_by_value(self.pred,1e-5,1)))
+            self.optimizer = tf.train.AdamOptimizer(1e-4).minimize(self.entropy_loss)
+            correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(label,1))
+            self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+            return (self.entropy_loss, self.accuracy, self.optimizer)
+
 
     def set_lr(self, lr, batch_size, train_size, decay_epochs = 10):
         self.lr = lr
